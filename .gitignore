@@ -1,0 +1,7 @@
+# Go test/build output
+*.test
+*.out
+*.prof
+*.pprof
+coverage.*
+/bin/

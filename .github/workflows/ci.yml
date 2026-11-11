@@ -1,0 +1,75 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Test (Go ${{ matrix.go }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        go: ["1.26", "1.27", "stable"]
+    services:
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-go@v6
+        with:
+          go-version: ${{ matrix.go }}
+      - name: go mod tidy is clean
+        run: go mod tidy && git diff --exit-code -- go.mod go.sum
+      - name: Start a 3-node Redis Cluster
+        run: |
+          for p in 7000 7001 7002; do
+            docker run -d --rm --name redis-cluster-$p --net host redis:7-alpine \
+              redis-server --port $p --cluster-enabled yes --cluster-config-file nodes-$p.conf --save '' --appendonly no
+          done
+          sleep 1
+          docker exec redis-cluster-7000 redis-cli --cluster create \
+            127.0.0.1:7000 127.0.0.1:7001 127.0.0.1:7002 --cluster-replicas 0 --cluster-yes
+          until docker exec redis-cluster-7000 redis-cli -p 7000 cluster info | grep -q cluster_state:ok; do sleep 1; done
+      - name: Test
+        run: go test -race -shuffle=on -count=1 -timeout 30m -coverprofile=coverage.out ./...
+        env:
+          REDIS_URL: redis://127.0.0.1:6379
+          REDIS_CLUSTER_NODES: redis://127.0.0.1:7000,redis://127.0.0.1:7001,redis://127.0.0.1:7002
+
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-go@v6
+        with:
+          go-version: stable
+      - uses: golangci/golangci-lint-action@v9
+        with:
+          version: latest
+
+  vulncheck:
+    name: govulncheck
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: golang/govulncheck-action@v1
+        with:
+          go-version-input: stable
