@@ -3,11 +3,12 @@ package bullmq_test
 // Global concurrency tests (port of bullmq_rust/tests/global_concurrency_test.rs).
 
 import (
-	"bullmq"
 	"context"
 	"sync/atomic"
 	"testing"
 	"time"
+
+	"github.com/imdat99/bullmq"
 )
 
 // mxConcurrencyProbe records the maximum number of jobs observed running at

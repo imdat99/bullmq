@@ -3,11 +3,12 @@ package bullmq_test
 // Metrics (time-series) tests (port of bullmq_rust/tests/metrics_test.rs).
 
 import (
-	"bullmq"
 	"context"
 	"errors"
 	"testing"
 	"time"
+
+	"github.com/imdat99/bullmq"
 )
 
 // A worker configured with the metrics option records completed-job counts.

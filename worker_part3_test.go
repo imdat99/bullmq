@@ -7,7 +7,6 @@ package bullmq_test
 // trimEvents.
 
 import (
-	"bullmq"
 	"context"
 	"encoding/json"
 	"errors"
@@ -16,6 +15,8 @@ import (
 	"sync/atomic"
 	"testing"
 	"time"
+
+	"github.com/imdat99/bullmq"
 )
 
 // w3WaitEvents mirrors the Rust `tokio::time::timeout(d, loop { next_event })`

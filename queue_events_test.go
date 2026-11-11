@@ -7,7 +7,6 @@ package bullmq_test
 // Ported from bullmq_rust/tests/queue_events_test.rs.
 
 import (
-	"bullmq"
 	"context"
 	"errors"
 	"strconv"
@@ -16,6 +15,8 @@ import (
 	"sync/atomic"
 	"testing"
 	"time"
+
+	"github.com/imdat99/bullmq"
 )
 
 // evMakeEvents builds QueueEvents that reads the full stream history ("0"),

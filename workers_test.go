@@ -7,13 +7,14 @@ package bullmq_test
 // running Redis instance at redis://127.0.0.1:6379.
 
 import (
-	"bullmq"
 	"context"
 	"reflect"
 	"sort"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/imdat99/bullmq"
 )
 
 func mxNoopProcessor() bullmq.Processor {

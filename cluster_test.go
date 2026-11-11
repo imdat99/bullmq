@@ -12,7 +12,6 @@ package bullmq_test
 // Ported from bullmq_rust/tests/cluster_test.rs.
 
 import (
-	"bullmq"
 	"context"
 	"fmt"
 	"os"
@@ -22,6 +21,8 @@ import (
 	"time"
 
 	"github.com/redis/go-redis/v9"
+
+	"github.com/imdat99/bullmq"
 )
 
 const evClusterPrefix = "{bull-rs}"

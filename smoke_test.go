@@ -1,11 +1,12 @@
 package bullmq_test
 
 import (
-	"bullmq"
 	"context"
 	"errors"
 	"testing"
 	"time"
+
+	"github.com/imdat99/bullmq"
 )
 
 func TestSmokeProcessAndRetry(t *testing.T) {

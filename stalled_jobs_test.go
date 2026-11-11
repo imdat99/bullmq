@@ -4,7 +4,6 @@ package bullmq_test
 // (port of bullmq_rust/tests/stalled_jobs_test.rs).
 
 import (
-	"bullmq"
 	"context"
 	"errors"
 	"fmt"
@@ -12,6 +11,8 @@ import (
 	"sync/atomic"
 	"testing"
 	"time"
+
+	"github.com/imdat99/bullmq"
 )
 
 // mxStallingProcessor returns a processor that "stalls": it holds the job for

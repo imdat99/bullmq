@@ -1,14 +1,15 @@
 package bullmq
 
 import (
-	"bullmq/internal/msgpack"
-	"bullmq/internal/scripts"
 	"os"
 	"reflect"
 	"strconv"
 	"testing"
 
 	vmsgpack "github.com/vmihailenco/msgpack/v5"
+
+	"github.com/imdat99/bullmq/internal/msgpack"
+	"github.com/imdat99/bullmq/internal/scripts"
 )
 
 // The encoder feeds cmsgpack in the Lua scripts; check its output with an

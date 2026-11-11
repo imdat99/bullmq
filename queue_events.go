@@ -1,7 +1,6 @@
 package bullmq
 
 import (
-	"bullmq/internal/eventqueue"
 	"context"
 	"encoding/json"
 	"errors"
@@ -13,6 +12,8 @@ import (
 	"time"
 
 	"github.com/redis/go-redis/v9"
+
+	"github.com/imdat99/bullmq/internal/eventqueue"
 )
 
 // Cross-process queue event listener.

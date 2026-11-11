@@ -6,12 +6,13 @@ package bullmq_test
 // Requires a running Redis instance at redis://127.0.0.1:6379.
 
 import (
-	"bullmq"
 	"context"
 	"strconv"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/imdat99/bullmq"
 )
 
 // mxOptInt64 renders an optional int64 for assertion messages.

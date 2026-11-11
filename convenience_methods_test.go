@@ -9,13 +9,14 @@ package bullmq_test
 // Ported from bullmq_rust/tests/convenience_methods_test.rs.
 
 import (
-	"bullmq"
 	"context"
 	"encoding/json"
 	"reflect"
 	"sync"
 	"testing"
 	"time"
+
+	"github.com/imdat99/bullmq"
 )
 
 // evNoopProcessor returns a processor that completes every job with null.

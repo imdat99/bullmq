@@ -3,7 +3,6 @@
 package bullmq_test
 
 import (
-	"bullmq"
 	"context"
 	"encoding/json"
 	"errors"
@@ -13,6 +12,8 @@ import (
 	"sync/atomic"
 	"testing"
 	"time"
+
+	"github.com/imdat99/bullmq"
 )
 
 // jsChanBuf is the buffer size of the channels processors report to. It is

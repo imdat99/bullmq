@@ -25,7 +25,7 @@ events, production operations, and an error reference.
 ## Install
 
 ```bash
-go get bullmq   # module path is `bullmq`; adjust once published under a VCS path
+go get github.com/imdat99/bullmq
 ```
 
 Requires Go 1.26+ and Redis 6.2+ (7.x recommended).

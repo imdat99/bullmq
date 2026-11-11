@@ -4,13 +4,14 @@
 package main
 
 import (
-	"bullmq"
 	"context"
 	"errors"
 	"log"
 	"os"
 	"strconv"
 	"time"
+
+	"github.com/imdat99/bullmq"
 )
 
 func main() {

@@ -8,11 +8,12 @@ package bullmq_test
 // instance at redis://127.0.0.1:6379.
 
 import (
-	"bullmq"
 	"context"
 	"sync/atomic"
 	"testing"
 	"time"
+
+	"github.com/imdat99/bullmq"
 )
 
 // mxWaitForFailed waits for the next EventFailed worker event and returns its

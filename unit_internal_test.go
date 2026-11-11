@@ -5,7 +5,6 @@ package bullmq
 // the Go equivalents.
 
 import (
-	"bullmq/internal/scripts"
 	"context"
 	"crypto/ecdsa"
 	"crypto/elliptic"
@@ -25,6 +24,8 @@ import (
 	"time"
 
 	"github.com/redis/go-redis/v9"
+
+	"github.com/imdat99/bullmq/internal/scripts"
 )
 
 // ═══════════════════════════════════════════════════════════════════════════

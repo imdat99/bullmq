@@ -3,11 +3,12 @@ package bullmq_test
 // Rate limiting tests (port of bullmq_rust/tests/rate_limit_test.rs).
 
 import (
-	"bullmq"
 	"context"
 	"sync/atomic"
 	"testing"
 	"time"
+
+	"github.com/imdat99/bullmq"
 )
 
 // mxTimestampProcessor returns a processor that sends the time at which each

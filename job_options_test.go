@@ -7,13 +7,14 @@ package bullmq_test
 // Redis instance at redis://127.0.0.1:6379.
 
 import (
-	"bullmq"
 	"context"
 	"errors"
 	"strings"
 	"sync/atomic"
 	"testing"
 	"time"
+
+	"github.com/imdat99/bullmq"
 )
 
 // mxExpectInvalidConfig asserts err is an ErrInvalidConfig containing msg.

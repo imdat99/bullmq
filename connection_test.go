@@ -8,7 +8,6 @@ package bullmq_test
 // credentials and certificate material.
 
 import (
-	"bullmq"
 	"context"
 	"fmt"
 	"net"
@@ -17,6 +16,8 @@ import (
 	"testing"
 
 	"github.com/redis/go-redis/v9"
+
+	"github.com/imdat99/bullmq"
 )
 
 func mxAssertURL(t *testing.T, opts bullmq.RedisConnectionOptions, want string) {

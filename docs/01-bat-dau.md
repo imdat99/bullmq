@@ -15,25 +15,24 @@ docker run -d --rm --name redis-dev -p 127.0.0.1:6379:6379 \
 
 ## Cài đặt
 
-Khi thư viện đã nằm trên Git (ví dụ `gitlab.company.vn/backend/bullmq-go`):
-
 ```bash
-go get gitlab.company.vn/backend/bullmq-go@latest
+go get github.com/imdat99/bullmq@latest
 ```
 
-Repo private thì đặt thêm `GOPRIVATE=gitlab.company.vn/*`.
+Nếu repo để private, đặt thêm `GOPRIVATE=github.com/imdat99/*`.
 
-Khi đang phát triển trên cùng máy, trỏ thẳng tới thư mục mã nguồn:
+Khi đang sửa thư viện và muốn thử ngay ở project khác trên cùng máy, trỏ thẳng
+tới thư mục mã nguồn (bỏ dòng `replace` trước khi commit):
 
 ```bash
-go mod edit -require=bullmq@v0.0.0 -replace=bullmq=/duong/dan/toi/bullMQ_go
+go mod edit -replace=github.com/imdat99/bullmq=/duong/dan/toi/bullMQ_go
 go mod tidy
 ```
 
-Trong code, tên package luôn là `bullmq`:
+Trong code, tên package là `bullmq`:
 
 ```go
-import "bullmq" // hoặc "gitlab.company.vn/backend/bullmq-go"
+import "github.com/imdat99/bullmq"
 ```
 
 ## Ví dụ đầu tiên
@@ -53,7 +52,7 @@ import (
 	"log"
 	"time"
 
-	"bullmq"
+	"github.com/imdat99/bullmq"
 )
 
 type WelcomeEmail struct {
@@ -101,7 +100,7 @@ import (
 	"syscall"
 	"time"
 
-	"bullmq"
+	"github.com/imdat99/bullmq"
 )
 
 type WelcomeEmail struct {

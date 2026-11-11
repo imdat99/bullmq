@@ -4,7 +4,6 @@ package bullmq_test
 // processing, events, concurrency, remove-on-complete, return values.
 
 import (
-	"bullmq"
 	"context"
 	"encoding/json"
 	"errors"
@@ -16,6 +15,8 @@ import (
 	"sync/atomic"
 	"testing"
 	"time"
+
+	"github.com/imdat99/bullmq"
 )
 
 // ── helpers (prefix w1) ─────────────────────────────────────────────────────

@@ -3,10 +3,11 @@ package bullmq_test
 // Deduplication tests (port of bullmq_rust/tests/deduplication_test.rs).
 
 import (
-	"bullmq"
 	"context"
 	"testing"
 	"time"
+
+	"github.com/imdat99/bullmq"
 )
 
 // mxDedup returns job options deduplicating on id.

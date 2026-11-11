@@ -179,6 +179,9 @@ formatters:
     # - golines  # line wrapping — too opinionated, can break readability
     # - swaggo   # swaggo comment formatting — only for swaggo users
   settings:
+    goimports:
+      local-prefixes:
+        - github.com/imdat99/bullmq
     gofumpt:
       extra:
         group-params: true

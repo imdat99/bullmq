@@ -3,7 +3,6 @@ package bullmq_test
 // Port of bullmq_rust/tests/worker_test.rs, tests starting in lines 3532-7100.
 
 import (
-	"bullmq"
 	"context"
 	"errors"
 	"fmt"
@@ -16,6 +15,8 @@ import (
 	"time"
 
 	"github.com/redis/go-redis/v9"
+
+	"github.com/imdat99/bullmq"
 )
 
 // ── helpers (prefix w2) ─────────────────────────────────────────────────────

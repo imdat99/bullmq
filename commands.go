@@ -1,13 +1,14 @@
 package bullmq
 
 import (
-	"bullmq/internal/msgpack"
-	"bullmq/internal/scripts"
 	"context"
 	"encoding/json"
 	"fmt"
 	"strconv"
 	"time"
+
+	"github.com/imdat99/bullmq/internal/msgpack"
+	"github.com/imdat99/bullmq/internal/scripts"
 )
 
 // This file holds the script invocations shared by Job, Queue and Worker.

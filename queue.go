@@ -1,8 +1,6 @@
 package bullmq
 
 import (
-	"bullmq/internal/msgpack"
-	"bullmq/internal/scripts"
 	"context"
 	"encoding/json"
 	"errors"
@@ -14,6 +12,9 @@ import (
 	"time"
 
 	"github.com/redis/go-redis/v9"
+
+	"github.com/imdat99/bullmq/internal/msgpack"
+	"github.com/imdat99/bullmq/internal/scripts"
 )
 
 // Version is the library version recorded in the queue meta hash.

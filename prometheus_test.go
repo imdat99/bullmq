@@ -7,7 +7,6 @@ package bullmq_test
 // Requires a running Redis instance at redis://127.0.0.1:6379.
 
 import (
-	"bullmq"
 	"context"
 	"errors"
 	"fmt"
@@ -15,6 +14,8 @@ import (
 	"sync/atomic"
 	"testing"
 	"time"
+
+	"github.com/imdat99/bullmq"
 )
 
 // mxAssertContains fails when s does not contain sub.

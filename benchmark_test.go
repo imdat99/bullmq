@@ -16,13 +16,14 @@ package bullmq_test
 // Each benchmark reports a jobs/s metric in addition to ns/op.
 
 import (
-	"bullmq"
 	"context"
 	"strconv"
 	"strings"
 	"sync"
 	"testing"
 	"time"
+
+	"github.com/imdat99/bullmq"
 )
 
 var benchPayload = map[string]any{"index": 0, "payload": strings.Repeat("x", 100)}

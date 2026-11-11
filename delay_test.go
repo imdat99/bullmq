@@ -3,11 +3,12 @@ package bullmq_test
 // Delayed job processing tests (port of bullmq_rust/tests/delay_test.rs).
 
 import (
-	"bullmq"
 	"context"
 	"reflect"
 	"testing"
 	"time"
+
+	"github.com/imdat99/bullmq"
 )
 
 func TestDelayedJobProcessedAfterDelay(t *testing.T) {

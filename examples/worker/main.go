@@ -4,13 +4,14 @@
 package main
 
 import (
-	"bullmq"
 	"context"
 	"log"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
+
+	"github.com/imdat99/bullmq"
 )
 
 type email struct {

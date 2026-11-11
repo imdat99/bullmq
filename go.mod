@@ -1,4 +1,4 @@
-module bullmq
+module github.com/imdat99/bullmq
 
 go 1.26.0
 

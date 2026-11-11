@@ -1,8 +1,6 @@
 package bullmq
 
 import (
-	"bullmq/internal/msgpack"
-	"bullmq/internal/scripts"
 	"cmp"
 	"context"
 	"errors"
@@ -12,6 +10,9 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/redis/go-redis/v9"
+
+	"github.com/imdat99/bullmq/internal/msgpack"
+	"github.com/imdat99/bullmq/internal/scripts"
 )
 
 // Defaults of [FlowProducer.GetFlow].

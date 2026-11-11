@@ -1,7 +1,6 @@
 package bullmq
 
 import (
-	"bullmq/internal/scripts"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -9,6 +8,8 @@ import (
 	"strconv"
 	"sync/atomic"
 	"time"
+
+	"github.com/imdat99/bullmq/internal/scripts"
 )
 
 // scriptContext binds a job to the queue it belongs to so that its methods

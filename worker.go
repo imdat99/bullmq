@@ -1,8 +1,6 @@
 package bullmq
 
 import (
-	"bullmq/internal/eventqueue"
-	"bullmq/internal/scripts"
 	"context"
 	"encoding/json"
 	"errors"
@@ -17,6 +15,9 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/redis/go-redis/v9"
+
+	"github.com/imdat99/bullmq/internal/eventqueue"
+	"github.com/imdat99/bullmq/internal/scripts"
 )
 
 // Processor processes a job and returns its result, which is stored

@@ -3,7 +3,6 @@
 package bullmq_test
 
 import (
-	"bullmq"
 	"context"
 	"encoding/json"
 	"errors"
@@ -11,6 +10,8 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/imdat99/bullmq"
 )
 
 // qtDecodeData decodes a job's JSON data into a generic map.

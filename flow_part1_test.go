@@ -7,7 +7,6 @@ package bullmq_test
 // are maintained properly.
 
 import (
-	"bullmq"
 	"context"
 	"errors"
 	"fmt"
@@ -16,6 +15,8 @@ import (
 	"sync/atomic"
 	"testing"
 	"time"
+
+	"github.com/imdat99/bullmq"
 )
 
 // f1FlowProducer creates a FlowProducer with the test connection, closed at

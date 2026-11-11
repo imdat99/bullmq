@@ -1,7 +1,6 @@
 package bullmq_test
 
 import (
-	"bullmq"
 	"context"
 	"fmt"
 	"strings"
@@ -10,6 +9,8 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+
+	"github.com/imdat99/bullmq"
 )
 
 // f3Prefix is the key prefix used by the flow tests (Rust "bf-test").

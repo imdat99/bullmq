@@ -1,7 +1,6 @@
 package bullmq_test
 
 import (
-	"bullmq"
 	"context"
 	"fmt"
 	"net/url"
@@ -13,6 +12,8 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/redis/go-redis/v9"
+
+	"github.com/imdat99/bullmq"
 )
 
 // testRedisURL returns REDIS_URL or the local default.

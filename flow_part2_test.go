@@ -3,7 +3,6 @@ package bullmq_test
 // Port of bullmq_rust/tests/flow_test.rs (second part: lines 3204-6110).
 
 import (
-	"bullmq"
 	"context"
 	"errors"
 	"fmt"
@@ -13,6 +12,8 @@ import (
 	"sync/atomic"
 	"testing"
 	"time"
+
+	"github.com/imdat99/bullmq"
 )
 
 // f2Prefix is the key prefix used by the flow tests (Rust "bf-test").

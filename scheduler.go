@@ -1,8 +1,6 @@
 package bullmq
 
 import (
-	"bullmq/internal/msgpack"
-	"bullmq/internal/scripts"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -10,6 +8,9 @@ import (
 	"time"
 
 	"github.com/robfig/cron/v3"
+
+	"github.com/imdat99/bullmq/internal/msgpack"
+	"github.com/imdat99/bullmq/internal/scripts"
 )
 
 // cronParser accepts 5-field patterns and 6-field patterns with seconds.

@@ -1,11 +1,12 @@
 package bullmq_test
 
 import (
-	"bullmq"
 	"context"
 	"fmt"
 	"log"
 	"time"
+
+	"github.com/imdat99/bullmq"
 )
 
 // Examples compile with the tests but do not run (they need Redis).
