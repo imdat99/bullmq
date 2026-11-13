@@ -386,6 +386,8 @@ func (q *Queue) addJobCall(job *Job) (*scripts.Script, []any, error) {
 // timestamp, parentKey, parentDepsKey, parent, repeatJobKey, dedupKey].
 func packAddArgs(k QueueKeys, job *Job, repeatJobKey string) ([]byte, error) {
 	var b msgpack.Buf
+	// Fixed fields plus the strings; the parent and dedup parts are rare.
+	b.Grow(64 + len(k.KeyPrefix()) + len(job.Opts.JobID) + len(job.Name) + len(repeatJobKey))
 	b.ArrayLen(9)
 	b.Str(k.KeyPrefix())
 	b.Str(job.Opts.JobID)

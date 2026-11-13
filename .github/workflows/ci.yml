@@ -1,21 +1,29 @@
 name: CI
 
+# Pull requests into master: tests, lint, vulncheck and the performance gate.
+# Pushes (merges) to master: the same gates, then an automatic release when
+# all of them pass. Make these checks required in the master branch
+# protection so a PR cannot merge while one fails.
 on:
   push:
-    branches: [main]
+    branches: [master]
   pull_request:
+    branches: [master]
+  workflow_dispatch:
 
 permissions:
   contents: read
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  # Never cancel a master run: it may be releasing.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   test:
     name: Test (Go ${{ matrix.go }})
     runs-on: ubuntu-latest
+    timeout-minutes: 40
     strategy:
       fail-fast: false
       matrix:
@@ -73,3 +81,146 @@ jobs:
       - uses: golang/govulncheck-action@v1
         with:
           go-version-input: stable
+
+  # Runs the benchmarks of this revision and of its base (the PR target, or
+  # the previous master tip on a push) interleaved on the same runner, then
+  # fails on an allocs/op budget breach or a throughput regression. See
+  # .github/perfgate/main.go for the rules.
+  perf:
+    name: Performance
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      ROUNDS: "5"
+      # 3000 jobs per benchmark op set; each benchmark deletes its keys, so
+      # Redis holds at most a few MB at a time.
+      BENCH_FLAGS: -test.run=^$ -test.bench=. -test.benchtime=3000x -test.benchmem -test.count=1
+      REDIS_URL: redis://127.0.0.1:6379
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-go@v6
+        with:
+          go-version: stable
+      - name: Start Redis (memory-capped, no persistence)
+        run: |
+          docker run -d --name redis-bench -p 127.0.0.1:6379:6379 --memory 1536m redis:7-alpine \
+            redis-server --save '' --appendonly no --maxmemory 1gb --maxmemory-policy noeviction
+          until docker exec redis-bench redis-cli ping | grep -q PONG; do sleep 1; done
+      - name: Resolve base revision
+        id: base
+        env:
+          PR_BASE: ${{ github.event.pull_request.base.sha }}
+          PUSH_BEFORE: ${{ github.event.before }}
+        run: |
+          base="${PR_BASE:-$PUSH_BEFORE}"
+          if [ -z "$base" ] || [ "$base" = "0000000000000000000000000000000000000000" ] \
+            || ! git cat-file -e "${base}^{commit}" 2>/dev/null; then
+            echo "::notice::No base revision; checking allocation budgets only."
+            base=""
+          fi
+          echo "sha=$base" >> "$GITHUB_OUTPUT"
+      - name: Build benchmark binaries
+        env:
+          BASE_SHA: ${{ steps.base.outputs.sha }}
+        run: |
+          go test -c -o "$RUNNER_TEMP/head.test" .
+          if [ -n "$BASE_SHA" ]; then
+            git worktree add --detach "$RUNNER_TEMP/base" "$BASE_SHA"
+            (cd "$RUNNER_TEMP/base" && go test -c -o "$RUNNER_TEMP/base.test" .) \
+              || echo "::warning::Base revision does not build; comparing against budgets only."
+          fi
+      - name: Run benchmarks (interleaved base/head)
+        run: |
+          mkdir -p bench
+          for i in $(seq "$ROUNDS"); do
+            echo "round $i/$ROUNDS"
+            if [ -x "$RUNNER_TEMP/base.test" ]; then
+              "$RUNNER_TEMP/base.test" $BENCH_FLAGS >> bench/base.txt 2>&1 \
+                || echo "::warning::base benchmarks failed in round $i"
+            fi
+            "$RUNNER_TEMP/head.test" $BENCH_FLAGS >> bench/head.txt 2>&1
+          done
+          docker exec redis-bench redis-cli info memory | grep used_memory_peak_human
+      - name: Performance gate
+        run: |
+          base_flag=""
+          if [ -s bench/base.txt ]; then base_flag="-base bench/base.txt"; fi
+          set -o pipefail
+          go run ./.github/perfgate -head bench/head.txt $base_flag \
+            -budget .github/perfgate/budget.json -max-slowdown 0.30 -max-alloc-growth 0.10 \
+            | tee -a "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v5
+        if: always()
+        with:
+          name: benchmarks
+          path: bench/
+          retention-days: 30
+
+  # Tags and publishes a GitHub Release for every merge to master once all
+  # gates pass. The version bump follows the commit subjects since the last
+  # v* tag: "feat:" bumps the minor, "<type>!:" / "BREAKING CHANGE" bumps the
+  # minor while on v0 (a v1+ major needs a new /vN module path, so it is left
+  # to a manual tag), anything else bumps the patch.
+  release:
+    name: Release
+    needs: [test, lint, vulncheck, perf]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    concurrency:
+      group: release
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - name: Compute next version
+        id: version
+        run: |
+          last=$(git describe --tags --abbrev=0 --match 'v[0-9]*.[0-9]*.[0-9]*' 2>/dev/null || true)
+          if [ -n "$last" ] && [ "$(git rev-list -n 1 "$last")" = "$GITHUB_SHA" ]; then
+            echo "::notice::$GITHUB_SHA is already released as $last."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          ver="${last#v}"
+          IFS=. read -r major minor patch <<< "${ver:-0.0.0}"
+          patch="${patch%%-*}"
+          msgs=$(git log --format='%s%n%b' "${last:+$last..}HEAD")
+
+          if grep -qE '^[a-z]+(\([^)]*\))?!:|^BREAKING[ -]CHANGE' <<< "$msgs"; then
+            if [ "$major" -ge 1 ]; then
+              echo "::error::Breaking change on v$major: a new major needs the /v$((major + 1)) module path. Tag it manually."
+              exit 1
+            fi
+            minor=$((minor + 1)); patch=0
+          elif grep -qE '^feat(\([^)]*\))?:' <<< "$msgs"; then
+            minor=$((minor + 1)); patch=0
+          else
+            patch=$((patch + 1))
+          fi
+
+          echo "tag=v$major.$minor.$patch" >> "$GITHUB_OUTPUT"
+          echo "last=$last" >> "$GITHUB_OUTPUT"
+      - name: Create GitHub Release
+        if: steps.version.outputs.skip != 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.version.outputs.tag }}
+          LAST: ${{ steps.version.outputs.last }}
+        run: |
+          gh release create "$TAG" --target "$GITHUB_SHA" --title "$TAG" \
+            --generate-notes ${LAST:+--notes-start-tag "$LAST"}
+          echo "Released **$TAG** (\`go get github.com/imdat99/bullmq@$TAG\`)" >> "$GITHUB_STEP_SUMMARY"
+      - name: Warm the Go module proxy
+        if: steps.version.outputs.skip != 'true'
+        continue-on-error: true # fails harmlessly for a private repository
+        env:
+          TAG: ${{ steps.version.outputs.tag }}
+        # Outside the module: go refuses a version query for the main module.
+        working-directory: ${{ runner.temp }}
+        run: GOPROXY=https://proxy.golang.org go list -m "github.com/imdat99/bullmq@$TAG"

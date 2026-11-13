@@ -152,27 +152,26 @@ func (o *finishOpts) pack() []byte {
 func putKeepJobs(m *msgpack.Map, key string, p *RemoveOnFinish) {
 	switch {
 	case p == nil, p.kind == removeBool && p.count != 1:
-		m.PutMap(key, 1, func(kv msgpack.KV) { kv.Int("count", -1) })
+		m.BeginMap(key, 1).Int("count", -1)
 	case p.kind == removeBool:
-		m.PutMap(key, 1, func(kv msgpack.KV) { kv.Int("count", 0) })
+		m.BeginMap(key, 1).Int("count", 0)
 	case p.kind == removeCount:
-		m.PutMap(key, 1, func(kv msgpack.KV) { kv.Int("count", p.count) })
+		m.BeginMap(key, 1).Int("count", p.count)
 	default:
 		k := p.keep
-		n := countSet(k.Age, k.Count, k.Limit)
-		m.PutMap(key, n, func(kv msgpack.KV) {
-			if k.Age != nil {
-				kv.Int("age", *k.Age)
-			}
 
-			if k.Count != nil {
-				kv.Int("count", *k.Count)
-			}
+		kv := m.BeginMap(key, countSet(k.Age, k.Count, k.Limit))
+		if k.Age != nil {
+			kv.Int("age", *k.Age)
+		}
 
-			if k.Limit != nil {
-				kv.Int("limit", *k.Limit)
-			}
-		})
+		if k.Count != nil {
+			kv.Int("count", *k.Count)
+		}
+
+		if k.Limit != nil {
+			kv.Int("limit", *k.Limit)
+		}
 	}
 }
 
@@ -190,10 +189,9 @@ func countSet(ps ...*int64) int {
 
 // putLimiter writes the {max, duration} limiter map.
 func putLimiter(m *msgpack.Map, l *RateLimiterOptions) {
-	m.PutMap("limiter", 2, func(kv msgpack.KV) {
-		kv.Int("max", l.Max)
-		kv.Int("duration", l.Duration.Milliseconds())
-	})
+	kv := m.BeginMap("limiter", 2)
+	kv.Int("max", l.Max)
+	kv.Int("duration", l.Duration.Milliseconds())
 }
 
 // moveToFinished runs the moveToFinished script. When fetchNext is set the

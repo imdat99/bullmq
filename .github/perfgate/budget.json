@@ -1,0 +1,9 @@
+{
+  "BenchmarkAddJob": 26,
+  "BenchmarkAddJobParallel": 27,
+  "BenchmarkAddBulk": 23,
+  "BenchmarkProcess/concurrency=10": 32,
+  "BenchmarkProcess/concurrency=100": 34,
+  "BenchmarkProcessIOBound/concurrency=100": 34,
+  "BenchmarkProcessIOBound/concurrency=500": 37
+}

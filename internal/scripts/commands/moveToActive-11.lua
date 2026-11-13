@@ -110,6 +110,19 @@ local function addBaseMarkerIfNeeded(markerKey, isPausedOrMaxed)
     rcall("ZADD", markerKey, 0, "0")
   end  
 end
+-- bullmq-go: return the job hash as one length-prefixed string
+-- ("<len>:<bytes>" per field and value) instead of a nested HGETALL array, so
+-- the client parses one bulk string instead of boxing every field. Decoded by
+-- unpackHash in job.go.
+local function packJobHash(jobKey)
+  local h = rcall("HGETALL", jobKey)
+  local out = {}
+  for i = 1, #h do
+    out[2 * i - 1] = #h[i] .. ":"
+    out[2 * i] = h[i]
+  end
+  return table.concat(out)
+end
 local function prepareJobForProcessing(keyPrefix, rateLimiterKey, eventStreamKey,
     jobId, processedOn, maxJobs, limiterDuration, markerKey, opts)
   local jobKey = keyPrefix .. jobId
@@ -141,7 +154,7 @@ local function prepareJobForProcessing(keyPrefix, rateLimiterKey, eventStreamKey
   addBaseMarkerIfNeeded(markerKey, false)
   -- rate limit delay must be 0 in this case to prevent adding more delay
   -- when job that is moved to active needs to be processed
-  return {rcall("HGETALL", jobKey), jobId, 0, 0} -- get job data
+  return {packJobHash(jobKey), jobId, 0, 0} -- get job data (bullmq-go: packed)
 end
 --[[
   Updates the delay set, by moving delayed jobs that should
