@@ -1,7 +1,9 @@
 # Rust → Go porting conventions (bullmq_rust → package `bullmq`)
 
-Module path `bullmq`, single root package (files in repo root). Lua scripts are
-embedded from `internal/scripts/commands/*.lua` (identical to the Rust crate's `src/commands`).
+Module path `github.com/imdat99/bullmq`, public API in the root package. Lua scripts are
+embedded from `internal/scripts/commands/*.lua` (identical to the Rust crate's `src/commands`,
+except for the `packJobHash` helper marked `bullmq-go:` in `moveToActive-11.lua`,
+`moveToFinished-14.lua` and `moveToDelayed-11.lua`; re-apply it when syncing upstream).
 Redis client: `github.com/redis/go-redis/v9` (RESP2, `MaxRetries=-1`).
 
 ## General mapping

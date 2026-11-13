@@ -707,10 +707,15 @@ func jobFromHash(id string, f map[string]string) *Job {
 	return j
 }
 
-// jobFromReply builds a job from a flat [field, value, ...] HGETALL reply
-// without an intermediate map (it runs for every fetched job). It returns
-// nil when the reply holds no fields.
+// jobFromReply builds a job from a flat [field, value, ...] HGETALL reply,
+// or from the packed string the fetch scripts return (see packJobHash in
+// moveToActive-11.lua), without an intermediate map: it runs for every
+// fetched job. It returns nil when the reply holds no fields.
 func jobFromReply(id string, reply any) *Job {
+	if packed, ok := reply.(string); ok {
+		return jobFromPacked(id, packed)
+	}
+
 	arr, _ := replyArray(reply)
 	if len(arr) < 2 {
 		return nil
@@ -733,6 +738,61 @@ func jobFromReply(id string, reply any) *Job {
 	j.finishDecode(hasDelay)
 
 	return j
+}
+
+// jobFromPacked decodes a hash packed as "<len>:<bytes>" per field and
+// value. Field values are substrings of packed, so decoding allocates only
+// the Job itself and the JSON fields. A malformed tail is ignored.
+func jobFromPacked(id, packed string) *Job {
+	if packed == "" {
+		return nil
+	}
+
+	j := &Job{ID: id, Data: jsonNull, Progress: jsonZero}
+
+	var hasDelay bool
+
+	for rest := packed; rest != ""; {
+		k, r, ok := nextPacked(rest)
+		if !ok {
+			break
+		}
+
+		v, r, ok := nextPacked(r)
+		if !ok {
+			break
+		}
+
+		rest = r
+		hasDelay = j.setField(k, v) || hasDelay
+	}
+
+	j.finishDecode(hasDelay)
+
+	return j
+}
+
+// nextPacked splits one "<len>:<bytes>" element off s.
+func nextPacked(s string) (elem, rest string, ok bool) {
+	n := 0
+
+	i := 0
+	for ; i < len(s) && s[i] != ':'; i++ {
+		c := s[i]
+		if c < '0' || c > '9' || n > len(s) {
+			return "", "", false
+		}
+
+		n = n*10 + int(c-'0')
+	}
+
+	if i == 0 || i == len(s) || n > len(s)-i-1 {
+		return "", "", false
+	}
+
+	end := i + 1 + n
+
+	return s[i+1 : end], s[end:], true
 }
 
 // setField decodes one hash field. It reports whether the field was "delay".
@@ -770,16 +830,16 @@ func (j *Job) setTextField(k, v string) bool {
 	case "name":
 		j.Name = v
 	case "data":
-		if v != "" && json.Valid([]byte(v)) {
-			j.Data = json.RawMessage(v)
+		if b := []byte(v); len(b) > 0 && json.Valid(b) {
+			j.Data = b
 		}
 	case "opts":
 		if v != "" {
 			_ = json.Unmarshal([]byte(v), &j.Opts) // tolerate options from other implementations
 		}
 	case "progress":
-		if v != "" && json.Valid([]byte(v)) {
-			j.Progress = json.RawMessage(v)
+		if b := []byte(v); len(b) > 0 && json.Valid(b) {
+			j.Progress = b
 		}
 	case "parent":
 		var pk ParentKeys

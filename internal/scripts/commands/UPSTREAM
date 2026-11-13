@@ -1,2 +1,5 @@
 a636d013641266e51185bf2d4e03cdf33fa3442a
   "version": "6.7.4",
+
+# bullmq-go local patch: packJobHash in moveToActive-11, moveToFinished-14,
+# moveToDelayed-11 (see PORTING.md). Re-apply after syncing these files.

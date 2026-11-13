@@ -155,7 +155,7 @@ phải ở Go (dùng dưới 1 core). Vì vậy:
   nhau của Redis Cluster (hash tag theo tên queue: `{emails}`, `{sms}`), hoặc
   dùng Redis trên CPU nhanh hơn.
 
-Bộ nhớ phía Go: khoảng 4.5 KB cấp phát mỗi job xử lý, GC nhẹ. Bộ nhớ phía Redis:
+Bộ nhớ phía Go: khoảng 30 lần cấp phát (~3–3.7 KB) mỗi job xử lý, GC nhẹ. Bộ nhớ phía Redis:
 mỗi job khoảng 1–2 KB + kích thước dữ liệu; tính dung lượng theo số job **giữ
 lại** (`RemoveOnComplete`), không theo tổng số job đã chạy.
 

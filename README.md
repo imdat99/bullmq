@@ -146,16 +146,21 @@ The per-job hot paths are tuned for low allocation (measured with
 
 | Path | allocs/op | B/op |
 | --- | --- | --- |
-| `Queue.Add` | 49 → 25 | 2.15 KiB → 1.31 KiB |
-| Worker, per processed job | 131 → 65 | 7.66 KiB → 4.49 KiB |
+| `Queue.Add` | 49 → 23 | 2.15 KiB → 1.31 KiB |
+| Worker, per processed job | 131 → 29 | 7.66 KiB → 3.0–3.7 KiB |
 
 How: queue keys are computed once per queue and the hot script calls reuse
 pre-boxed key lists (go-redis would otherwise box every key into an
 `interface{}`), msgpack maps are encoded into a single buffer, jobs are
 decoded straight from the Redis reply, script contexts are shared, and
 worker events use a fixed ring buffer (no allocation in steady state, even
-when nobody reads them). The remaining allocations are mostly go-redis reply
-parsing. In containers, set `GOMEMLIMIT` to ~80–90% of the memory limit.
+when nobody reads them). The fetch scripts (`moveToActive`, `moveToFinished`,
+`moveToDelayed`) return the next job's hash as one length-prefixed string
+instead of a nested `HGETALL` array, so go-redis parses one bulk string
+instead of boxing every field; this is the only change to the upstream Lua
+and it does not touch the Redis data layout. Most of the remaining
+allocations are in go-redis (command, connection check, `[]any` arguments)
+and in `encoding/json` for the job data you pass. In containers, set `GOMEMLIMIT` to ~80–90% of the memory limit.
 
 ## Tests
 

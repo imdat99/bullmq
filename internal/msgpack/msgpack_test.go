@@ -68,3 +68,19 @@ func TestMapEmptyAndLarge(t *testing.T) {
 		t.Fatalf("encode() produced %d entries", len(got))
 	}
 }
+
+func TestGrowKeepsContent(t *testing.T) {
+	t.Parallel()
+
+	var b Buf
+	b.Str("ab")
+	b.Grow(100)
+
+	if cap(b.Bytes())-len(b.Bytes()) < 100 {
+		t.Fatalf("cap %d len %d", cap(b.Bytes()), len(b.Bytes()))
+	}
+
+	if got := b.Bytes(); string(got) != "\xa2ab" {
+		t.Fatalf("content changed: %q", got)
+	}
+}

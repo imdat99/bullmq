@@ -17,6 +17,14 @@ type Buf struct {
 // Bytes returns the encoded bytes.
 func (m *Buf) Bytes() []byte { return m.b }
 
+// Grow ensures room for n more bytes, so a caller that knows the encoded
+// size up front avoids repeated regrowth.
+func (m *Buf) Grow(n int) {
+	if cap(m.b)-len(m.b) < n {
+		m.b = append(make([]byte, 0, len(m.b)+n), m.b...)
+	}
+}
+
 // Nil writes nil.
 func (m *Buf) Nil() { m.b = append(m.b, 0xc0) }
 
@@ -127,7 +135,9 @@ const headerRoom = 5
 
 func (mm *Map) key(k string) {
 	if mm.body.b == nil {
-		mm.body.b = make([]byte, headerRoom, 128)
+		// 256 bytes fit the per-job option maps (token, keepJobs, limiter…)
+		// without regrowing.
+		mm.body.b = make([]byte, headerRoom, 256)
 	}
 
 	mm.n++
@@ -158,11 +168,14 @@ func (mm *Map) PutRaw(key string, v []byte) {
 	mm.body.Raw(v)
 }
 
-// PutMap writes a nested map of exactly n entries, written by fill.
-func (mm *Map) PutMap(key string, n int, fill func(kv KV)) {
+// BeginMap starts a nested map of exactly n entries under key; write them
+// with the returned KV before adding the next entry. Unlike a callback API,
+// this keeps a local Map off the heap.
+func (mm *Map) BeginMap(key string, n int) KV {
 	mm.key(key)
 	mm.body.MapLen(n)
-	fill(KV{&mm.body})
+
+	return KV{&mm.body}
 }
 
 // KV writes the key/value pairs of a nested map.
@@ -185,17 +198,28 @@ func (mm *Map) Encode(m *Buf) {
 
 // Bytes returns the encoded map, reusing the reserved header room.
 func (mm *Map) Bytes() []byte {
-	var h Buf
-
-	h.b = make([]byte, 0, headerRoom)
-	h.MapLen(mm.n)
-
 	if mm.n == 0 {
-		return h.b
+		return []byte{0x80}
 	}
 
-	start := headerRoom - len(h.b)
-	copy(mm.body.b[start:], h.b)
+	// Write the header right before the body, into the reserved room.
+	b := mm.body.b
+
+	var start int
+
+	switch n := mm.n; {
+	case n < 16:
+		start = headerRoom - 1
+		b[start] = 0x80 | byte(n) //nolint:gosec // G115: n < 16
+	case n <= math.MaxUint16:
+		start = headerRoom - 3
+		b[start] = 0xde
+		binary.BigEndian.PutUint16(b[start+1:], uint16(n))
+	default:
+		start = 0
+		b[0] = 0xdf
+		binary.BigEndian.PutUint32(b[1:], uint32(n)) //nolint:gosec // G115: a map never holds 2^32 entries
+	}
 
 	return mm.body.b[start:]
 }
