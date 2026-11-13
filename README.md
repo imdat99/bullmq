@@ -162,6 +162,25 @@ and it does not touch the Redis data layout. Most of the remaining
 allocations are in go-redis (command, connection check, `[]any` arguments)
 and in `encoding/json` for the job data you pass. In containers, set `GOMEMLIMIT` to ~80–90% of the memory limit.
 
+## CI and releases
+
+`.github/workflows/ci.yml` runs on every pull request into `master` and on
+every push to `master`:
+
+| Job | Gate |
+| --- | --- |
+| Test | `go test -race -shuffle=on` on Go 1.26 / 1.27 / stable, with Redis and a 3-node Redis Cluster |
+| Lint | `golangci-lint` |
+| govulncheck | known vulnerabilities in reachable code |
+| Performance | benchmarks of the change and of its base, interleaved on one runner (5 rounds, medians): fails if allocs/op exceed `.github/perfgate/budget.json` or grow > 10% over the base, or if jobs/s drop > 30% |
+| Release | push to `master` only, after all of the above pass: creates the next `v*` tag and a GitHub Release with generated notes |
+
+The version bump follows the commit subjects since the last tag: `feat:`
+bumps the minor, a breaking change (`feat!:`, `BREAKING CHANGE`) also bumps
+the minor while on v0, anything else bumps the patch. When an optimisation
+lowers allocations, lower the budget in `budget.json` in the same PR so the
+gain is locked in. `make perfgate` runs the same check locally.
+
 ## Tests
 
 The full Rust test-suite (≈580 integration and unit tests) is ported 1:1.
