@@ -46,6 +46,14 @@ func f1Worker(t *testing.T, name, prefix string, p bullmq.Processor) *bullmq.Wor
 	return newTestWorker(t, name, p, &bullmq.WorkerOptions{Prefix: prefix})
 }
 
+// f1ManualWorker is f1Worker with ManualStart: a test that asserts the parent
+// is still waiting-children starts its child worker only after that check,
+// or fast children may already have released (and run) the parent.
+func f1ManualWorker(t *testing.T, name, prefix string, p bullmq.Processor) *bullmq.Worker {
+	t.Helper()
+	return newTestWorker(t, name, p, &bullmq.WorkerOptions{Prefix: prefix, ManualStart: true})
+}
+
 // f1Barrier mimics a tokio Barrier of 2 shared by a processor and the test:
 // the processor blocks in arrive until the test calls await (or the job
 // context is cancelled, e.g. when the worker close times out).
@@ -899,7 +907,7 @@ func TestShouldProcessChildrenBeforeParentWithChildrenValues(t *testing.T) {
 	}
 
 	// Child worker returns values[idx]
-	f1Worker(t, childQueueName, prefix, func(ctx context.Context, job *bullmq.Job) (any, error) {
+	childWorker := f1ManualWorker(t, childQueueName, prefix, func(ctx context.Context, job *bullmq.Job) (any, error) {
 		v, ok := f1Data(job)["idx"].(float64)
 		if !ok {
 			return nil, errors.New("missing idx")
@@ -941,6 +949,7 @@ func TestShouldProcessChildrenBeforeParentWithChildrenValues(t *testing.T) {
 	if s := f1State(t, parentQueue, tree.Job.ID); s != bullmq.StateWaitingChildren {
 		t.Fatalf("parent state = %s, want waiting-children", s)
 	}
+	noErr(t, childWorker.Run()) // only now: see f1ManualWorker
 
 	// Wait for parent processing
 	if !barrier.await(10 * time.Second) {
@@ -1023,7 +1032,7 @@ func TestShouldMoveParentToWaitWithIgnoredChildrenFailures(t *testing.T) {
 	})
 
 	// Child worker always fails
-	f1Worker(t, childQueueName, prefix, func(ctx context.Context, job *bullmq.Job) (any, error) {
+	childWorker := f1ManualWorker(t, childQueueName, prefix, func(ctx context.Context, job *bullmq.Job) (any, error) {
 		return nil, errors.New("error")
 	})
 
@@ -1043,6 +1052,7 @@ func TestShouldMoveParentToWaitWithIgnoredChildrenFailures(t *testing.T) {
 	if s := f1State(t, parentQueue, tree.Job.ID); s != bullmq.StateWaitingChildren {
 		t.Fatalf("parent state = %s, want waiting-children", s)
 	}
+	noErr(t, childWorker.Run()) // only now: see f1ManualWorker
 
 	// Wait for parent to be processed
 	if !barrier.await(10 * time.Second) {
@@ -1081,7 +1091,7 @@ func TestShouldAllowParentOptsOnTheRootJob(t *testing.T) {
 	grandparentJobID := grandparentJob.ID
 
 	// Child worker
-	f1Worker(t, childQueueName, prefix, func(ctx context.Context, job *bullmq.Job) (any, error) {
+	childWorker := f1ManualWorker(t, childQueueName, prefix, func(ctx context.Context, job *bullmq.Job) (any, error) {
 		return map[string]any{"value": f1Idx(job)}, nil
 	})
 
@@ -1123,6 +1133,7 @@ func TestShouldAllowParentOptsOnTheRootJob(t *testing.T) {
 	if s := f1State(t, parentQueue, tree.Job.ID); s != bullmq.StateWaitingChildren {
 		t.Fatalf("parent state = %s, want waiting-children", s)
 	}
+	noErr(t, childWorker.Run()) // only now: see f1ManualWorker
 	if len(tree.Children) != 2 {
 		t.Fatalf("children = %d, want 2", len(tree.Children))
 	}
@@ -1146,7 +1157,7 @@ func TestShouldRetryChildWithFixedBackoffInFlow(t *testing.T) {
 	parentQueue := f1Queue(t, parentQueueName, prefix)
 
 	// Child worker fails on first attempt, succeeds on second
-	f1Worker(t, childQueueName, prefix, func(ctx context.Context, job *bullmq.Job) (any, error) {
+	childWorker := f1ManualWorker(t, childQueueName, prefix, func(ctx context.Context, job *bullmq.Job) (any, error) {
 		if job.AttemptsMade < 1 {
 			return nil, errors.New("Not yet!")
 		}
@@ -1181,6 +1192,7 @@ func TestShouldRetryChildWithFixedBackoffInFlow(t *testing.T) {
 	if s := f1State(t, parentQueue, tree.Job.ID); s != bullmq.StateWaitingChildren {
 		t.Fatalf("parent state = %s, want waiting-children", s)
 	}
+	noErr(t, childWorker.Run()) // only now: see f1ManualWorker
 
 	// Wait for parent to process (child retries then succeeds, then parent runs)
 	if !barrier.await(10 * time.Second) {
@@ -1447,7 +1459,7 @@ func TestShouldUseCustomPrefixToAddJobs(t *testing.T) {
 	parentQueue := f1Queue(t, parentQueueName, customPrefix)
 
 	// Child worker
-	f1Worker(t, childQueueName, customPrefix, func(ctx context.Context, job *bullmq.Job) (any, error) {
+	childWorker := f1ManualWorker(t, childQueueName, customPrefix, func(ctx context.Context, job *bullmq.Job) (any, error) {
 		return map[string]any{"value": f1Idx(job)}, nil
 	})
 
@@ -1487,6 +1499,7 @@ func TestShouldUseCustomPrefixToAddJobs(t *testing.T) {
 	if s := f1State(t, parentQueue, tree.Job.ID); s != bullmq.StateWaitingChildren {
 		t.Fatalf("parent state = %s, want waiting-children", s)
 	}
+	noErr(t, childWorker.Run()) // only now: see f1ManualWorker
 
 	// Verify child data
 	if foo := f1Data(tree.Children[0].Job)["foo"]; foo != "bar" {

@@ -1083,7 +1083,7 @@ func TestShouldBeginWithAttemptsMadeAsOneInFlow(t *testing.T) {
 			completed.Add(1)
 		}
 		return nil, nil
-	}, nil)
+	}, &bullmq.WorkerOptions{ManualStart: true})
 
 	flow := f3Flow(t, prefix)
 	optsOneAttempt := func() *bullmq.JobOptions {
@@ -1112,6 +1112,8 @@ func TestShouldBeginWithAttemptsMadeAsOneInFlow(t *testing.T) {
 	if st := f3State(t, queue, tree.Job.ID); st != bullmq.StateWaitingChildren {
 		t.Fatalf("parent state = %s", st)
 	}
+	// Started only now, or fast children may already have released the parent.
+	noErr(t, worker.Run())
 
 	// Wait for all 3 jobs to complete.
 	eventually(t, 15*time.Second, func() bool {
@@ -1240,7 +1242,7 @@ func TestShouldProcessChildrenBeforeParentWithDefaultJobOptions(t *testing.T) {
 	// Child worker returns a value keyed by idx.
 	childWorker := f3Worker(t, childQueueName, prefix, func(ctx context.Context, job *bullmq.Job) (any, error) {
 		return map[string]any{"value": f3Idx(job)}, nil
-	}, nil)
+	}, &bullmq.WorkerOptions{ManualStart: true})
 
 	// Parent worker verifies it has 3 processed dependencies.
 	var depsOK atomic.Bool
@@ -1276,6 +1278,8 @@ func TestShouldProcessChildrenBeforeParentWithDefaultJobOptions(t *testing.T) {
 	if st := f3State(t, parentQueue, tree.Job.ID); st != bullmq.StateWaitingChildren {
 		t.Fatalf("parent state = %s", st)
 	}
+	// Started only now, or fast children may already have released the parent.
+	noErr(t, childWorker.Run())
 	if len(tree.Children) != 3 {
 		t.Fatalf("children len = %d", len(tree.Children))
 	}
@@ -1879,7 +1883,7 @@ func TestShouldRemoveParentWhenChildMovedToFailedRemoveOnFail(t *testing.T) {
 			return nil, fmt.Errorf("failed")
 		}
 		return nil, nil
-	}, &bullmq.WorkerOptions{DrainDelay: time.Second})
+	}, &bullmq.WorkerOptions{DrainDelay: time.Second, ManualStart: true})
 
 	// Children worker (no-op) and parent worker (no-op).
 	childrenWorker := f3Worker(t, childQueueName, prefix, f3Null, &bullmq.WorkerOptions{DrainDelay: time.Second})
@@ -1908,6 +1912,8 @@ func TestShouldRemoveParentWhenChildMovedToFailedRemoveOnFail(t *testing.T) {
 	if st := f3State(t, parentQueue, tree.Job.ID); st != bullmq.StateWaitingChildren {
 		t.Fatalf("parent state = %s", st)
 	}
+	// Started only now, or fast children may already have released the parent.
+	noErr(t, grandWorker.Run())
 
 	child1ID := tree.Children[1].Job.ID
 
@@ -2027,7 +2033,7 @@ func TestShouldAllowParentOptsOnTheRootJobAddBulk(t *testing.T) {
 	// Child worker returns a value keyed by idx.
 	childWorker := f3Worker(t, childQueueName, prefix, func(ctx context.Context, job *bullmq.Job) (any, error) {
 		return map[string]any{"value": f3Idx(job)}, nil
-	}, &bullmq.WorkerOptions{DrainDelay: time.Second})
+	}, &bullmq.WorkerOptions{DrainDelay: time.Second, ManualStart: true})
 
 	// Parent worker verifies it has 2 processed dependencies.
 	var depsOK atomic.Bool
@@ -2067,6 +2073,8 @@ func TestShouldAllowParentOptsOnTheRootJobAddBulk(t *testing.T) {
 	if st := f3State(t, parentQueue, tree.Job.ID); st != bullmq.StateWaitingChildren {
 		t.Fatalf("parent state = %s", st)
 	}
+	// Started only now, or fast children may already have released the parent.
+	noErr(t, childWorker.Run())
 	if len(tree.Children) != 2 {
 		t.Fatalf("children len = %d", len(tree.Children))
 	}
